@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -78,25 +78,30 @@ class _KisanOneAppState extends State<KisanOneApp> {
     return AppStateScope(
       appState: appState,
       notifier: appState,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'KisanOne',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: appState.isDark ? ThemeMode.dark : ThemeMode.light,
-        locale: appState.locale,
-        supportedLocales: const [
-          Locale('en'),
-          Locale('hi'),
-          Locale('bn'),
-          Locale('kh'),
-        ],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        home: SplashScreen(),
+      child: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'KisanOne',
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: appState.isDark ? ThemeMode.dark : ThemeMode.light,
+            locale: appState.locale,
+            supportedLocales: const [
+              Locale('en'),
+              Locale('hi'),
+              Locale('bn'),
+              Locale('kh'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            home: SplashScreen(),
+          );
+        },
       ),
     );
   }
@@ -198,40 +203,37 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 120,
-              width: 120,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                'K1',
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const FancyBackground(),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(
+                    'assets/images/1000178814.png',
+                    width: 140,
+                    height: 140,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  'KisanOne',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your Agricultural Partner',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              'KisanOne',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Your Agricultural Partner',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -341,13 +343,10 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 16),
               Center(
-                child: Container(
-                  height: 100,
-                  width: 100,
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  alignment: Alignment.center,
-                  child: Text('K1',
-                      style: Theme.of(context).textTheme.headlineMedium),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset('assets/images/1000178814.png',
+                      height: 100, width: 100, fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(height: 16),
@@ -588,58 +587,81 @@ class HomePage extends StatelessWidget {
             onPressed: app.toggleTheme,
             icon: Icon(app.isDark ? Icons.light_mode : Icons.dark_mode),
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text("Today's Weather",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: const [
-              WeatherTile(label: 'Temperature', value: '28°C', icon: Icons.thermostat),
-              WeatherTile(label: 'Humidity', value: '60%', icon: Icons.water_drop),
-              WeatherTile(label: 'Rainfall', value: '5mm', icon: Icons.cloudy_snowing),
-              WeatherTile(label: 'Wind', value: '10 km/h', icon: Icons.air),
+          PopupMenuButton<String>(
+            icon: const CircleAvatar(child: Icon(Icons.person)),
+            onSelected: (v) async {
+              if (v == 'logout') {
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.remove('farmerName');
+                await prefs.remove('phone');
+                if (!context.mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => SplashScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem<String>(value: 'logout', child: Text('Log out')),
             ],
           ),
-          const SizedBox(height: 24),
-          Text('Quick Actions',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+        ],
+      ),
+      body: Stack(
+        children: [
+          const FancyBackground(),
+          ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              QuickAction(
-                label: 'Crop Advisory',
-                icon: Icons.agriculture,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CropAdvisoryPage()),
-                ),
+              Text("Today's Weather",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: const [
+                  WeatherTile(label: 'Temperature', value: '28°C', icon: Icons.thermostat),
+                  WeatherTile(label: 'Humidity', value: '60%', icon: Icons.water_drop),
+                  WeatherTile(label: 'Rainfall', value: '5mm', icon: Icons.cloudy_snowing),
+                  WeatherTile(label: 'Wind', value: '10 km/h', icon: Icons.air),
+                ],
               ),
-              QuickAction(
-                label: 'Soil Advisory',
-                icon: Icons.science_outlined,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CropRecommendationPage()),
-                ),
-              ),
-              QuickAction(
-                label: 'Crop Doctor',
-                icon: Icons.health_and_safety_outlined,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CropDoctorPage()),
-                ),
+              const SizedBox(height: 24),
+              Text('Quick Actions',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  QuickAction(
+                    label: 'Crop Advisory',
+                    icon: Icons.agriculture,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CropAdvisoryPage()),
+                    ),
+                  ),
+                  QuickAction(
+                    label: 'Soil Advisory',
+                    icon: Icons.science_outlined,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CropRecommendationPage()),
+                    ),
+                  ),
+                  QuickAction(
+                    label: 'Crop Doctor',
+                    icon: Icons.health_and_safety_outlined,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CropDoctorPage()),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -705,7 +727,12 @@ class QuickAction extends StatelessWidget {
         width: 160,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+            ],
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -728,29 +755,34 @@ class AiHelpHubPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('AI Help')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          _FeatureTile(
-            icon: Icons.agriculture,
-            title: 'Crop Advisory',
-            subtitle: 'Ask by text or voice',
-            onTap: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const CropAdvisoryPage())),
-          ),
-          _FeatureTile(
-            icon: Icons.science_outlined,
-            title: 'Crop Recommendation',
-            subtitle: 'Location and soil based',
-            onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CropRecommendationPage())),
-          ),
-          _FeatureTile(
-            icon: Icons.health_and_safety_outlined,
-            title: 'Crop Doctor',
-            subtitle: 'Upload crop image',
-            onTap: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const CropDoctorPage())),
+          const FancyBackground(),
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _FeatureTile(
+                icon: Icons.agriculture,
+                title: 'Crop Advisory',
+                subtitle: 'Ask by text or voice',
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const CropAdvisoryPage())),
+              ),
+              _FeatureTile(
+                icon: Icons.science_outlined,
+                title: 'Crop Recommendation',
+                subtitle: 'Location and soil based',
+                onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CropRecommendationPage())),
+              ),
+              _FeatureTile(
+                icon: Icons.health_and_safety_outlined,
+                title: 'Crop Doctor',
+                subtitle: 'Upload crop image',
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const CropDoctorPage())),
+              ),
+            ],
           ),
         ],
       ),
@@ -828,30 +860,35 @@ class _CropAdvisoryPageState extends State<CropAdvisoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crop Advisory')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          TextField(
-            controller: queryCtrl,
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Describe your crop question... ',
-              suffixIcon: IconButton(
-                onPressed: _toggleListen,
-                icon: Icon(listening ? Icons.mic : Icons.mic_none),
+          const FancyBackground(),
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextField(
+                controller: queryCtrl,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Describe your crop question... ',
+                  suffixIcon: IconButton(
+                    onPressed: _toggleListen,
+                    icon: Icon(listening ? Icons.mic : Icons.mic_none),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              FilledButton(onPressed: _submit, child: const Text('Ask')),
+              const SizedBox(height: 16),
+              if (answer.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(answer),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: _submit, child: const Text('Ask')), 
-          const SizedBox(height: 16),
-          if (answer.isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(answer),
-              ),
-            ),
         ],
       ),
     );
@@ -905,74 +942,79 @@ class _CropRecommendationPageState extends State<CropRecommendationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crop Recommendation')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          DropdownButtonFormField<String>(
-            value: soil,
-            decoration: const InputDecoration(labelText: 'Select Soil Type'),
-            items: const [
-              DropdownMenuItem(value: 'Alluvial', child: Text('Alluvial')),
-              DropdownMenuItem(value: 'Black', child: Text('Black')),
-              DropdownMenuItem(value: 'Red', child: Text('Red')),
-            ],
-            onChanged: (v) => setState(() => soil = v),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: climate,
-            decoration: const InputDecoration(labelText: 'Select Climate'),
-            items: const [
-              DropdownMenuItem(value: 'Tropical', child: Text('Tropical')),
-              DropdownMenuItem(value: 'Temperate', child: Text('Temperate')),
-              DropdownMenuItem(value: 'Arid', child: Text('Arid')),
-            ],
-            onChanged: (v) => setState(() => climate = v),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: irrigation,
-            decoration: const InputDecoration(labelText: 'Select Irrigation Type'),
-            items: const [
-              DropdownMenuItem(value: 'Rainfed', child: Text('Rainfed')),
-              DropdownMenuItem(value: 'Canal', child: Text('Canal')),
-              DropdownMenuItem(value: 'Drip', child: Text('Drip')),
-            ],
-            onChanged: (v) => setState(() => irrigation = v),
-          ),
-          const SizedBox(height: 12),
-          Row(
+          const FancyBackground(),
+          ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Expanded(
-                child: TextFormField(
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Location (lat, lng)',
-                    hintText: latLng ?? 'Not fetched',
+              DropdownButtonFormField<String>(
+                value: soil,
+                decoration: const InputDecoration(labelText: 'Select Soil Type'),
+                items: const [
+                  DropdownMenuItem(value: 'Alluvial', child: Text('Alluvial')),
+                  DropdownMenuItem(value: 'Black', child: Text('Black')),
+                  DropdownMenuItem(value: 'Red', child: Text('Red')),
+                ],
+                onChanged: (v) => setState(() => soil = v),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: climate,
+                decoration: const InputDecoration(labelText: 'Select Climate'),
+                items: const [
+                  DropdownMenuItem(value: 'Tropical', child: Text('Tropical')),
+                  DropdownMenuItem(value: 'Temperate', child: Text('Temperate')),
+                  DropdownMenuItem(value: 'Arid', child: Text('Arid')),
+                ],
+                onChanged: (v) => setState(() => climate = v),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: irrigation,
+                decoration: const InputDecoration(labelText: 'Select Irrigation Type'),
+                items: const [
+                  DropdownMenuItem(value: 'Rainfed', child: Text('Rainfed')),
+                  DropdownMenuItem(value: 'Canal', child: Text('Canal')),
+                  DropdownMenuItem(value: 'Drip', child: Text('Drip')),
+                ],
+                onChanged: (v) => setState(() => irrigation = v),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Location (lat, lng)',
+                        hintText: latLng ?? 'Not fetched',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _getLocation,
+                    icon: const Icon(Icons.my_location),
+                    label: const Text('Use GPS'),
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _recommend,
+                child: const Text('Get Recommendations'),
+              ),
+              const SizedBox(height: 16),
+              if (result != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(result!),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _getLocation,
-                icon: const Icon(Icons.my_location),
-                label: const Text('Use GPS'),
-              )
             ],
           ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _recommend,
-            child: const Text('Get Recommendations'),
-          ),
-          const SizedBox(height: 16),
-          if (result != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(result!),
-              ),
-            ),
         ],
       ),
     );
@@ -987,19 +1029,20 @@ class CropDoctorPage extends StatefulWidget {
 }
 
 class _CropDoctorPageState extends State<CropDoctorPage> {
-  File? image;
+  Uint8List? imageBytes;
   String? diagnosis;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? file = await picker.pickImage(source: source, imageQuality: 85);
     if (file != null) {
-      setState(() => image = File(file.path));
+      final Uint8List bytes = await file.readAsBytes();
+      setState(() => imageBytes = bytes);
     }
   }
 
   Future<void> _analyze() async {
-    if (image == null) return;
+    if (imageBytes == null) return;
     await Future<void>.delayed(const Duration(milliseconds: 700));
     setState(() {
       diagnosis = 'Crop: Tomato\nDisease: Early Blight\n'
@@ -1014,10 +1057,13 @@ class _CropDoctorPageState extends State<CropDoctorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crop Doctor')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          Container(
+          const FancyBackground(),
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
             height: 220,
             decoration: BoxDecoration(
               border: Border.all(
@@ -1027,7 +1073,7 @@ class _CropDoctorPageState extends State<CropDoctorPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: image == null
+            child: imageBytes == null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1040,37 +1086,45 @@ class _CropDoctorPageState extends State<CropDoctorPage> {
                   )
                 : ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(image!, fit: BoxFit.cover, width: double.infinity),
+                    child: Image.memory(imageBytes!, fit: BoxFit.cover, width: double.infinity),
                   ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: const Text('Upload Image'),
-                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _analyze,
-                  icon: const Icon(Icons.biotech_outlined),
-                  label: const Text('Analyze'),
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: const Text('Gallery'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.camera),
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text('Camera'),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _analyze,
+                icon: const Icon(Icons.biotech_outlined),
+                label: const Text('Analyze'),
+              ),
+              const SizedBox(height: 16),
+              if (diagnosis != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(diagnosis!),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 16),
-          if (diagnosis != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(diagnosis!),
-              ),
-            ),
         ],
       ),
     );
@@ -1185,8 +1239,96 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          ListTile(
+            title: const Text('Log out'),
+            leading: const Icon(Icons.logout),
+            onTap: () async {
+              final SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.remove('farmerName');
+              await prefs.remove('phone');
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => SplashScreen()),
+                (route) => false,
+              );
+            },
+          ),
         ],
       ),
+    );
+  }
+}
+
+// Animated gradient background
+class FancyBackground extends StatefulWidget {
+  const FancyBackground({super.key});
+  @override
+  State<FancyBackground> createState() => _FancyBackgroundState();
+}
+
+class _FancyBackgroundState extends State<FancyBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _x;
+  late final Animation<double> _y;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 8))
+      ..repeat(reverse: true);
+    _x = Tween<double>(begin: -0.2, end: 0.2).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _y = Tween<double>(begin: 0.8, end: 0.4).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                cs.primaryContainer.withOpacity(0.3),
+                cs.secondaryContainer.withOpacity(0.3),
+                cs.tertiaryContainer.withOpacity(0.3),
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                left: MediaQuery.of(context).size.width * _x.value,
+                top: 40,
+                child: _blob(cs.primary.withOpacity(0.15), 180),
+              ),
+              Positioned(
+                right: 16,
+                top: MediaQuery.of(context).size.height * _y.value,
+                child: _blob(cs.secondary.withOpacity(0.15), 140),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _blob(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
